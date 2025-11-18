@@ -123,10 +123,10 @@ export default function RegisterScreen({ navigation }) {
     const correoNormalizado = form.correo_institucional.trim().toLowerCase();
     const now = new Date().toISOString();
 
-    if (form.rol_id === "4") {
+    if (form.rol_id == 4) {
       // Registrar proveedor en providers
       const providerData = {
-        cedula: form.carnet,
+        cedula: parseInt(form.carnet, 10),
         nombre: form.nombre_emprendimiento,
         telefono: form.contacto_telefono,
         municipio_permiso: form.permiso_municipal,
@@ -143,7 +143,7 @@ export default function RegisterScreen({ navigation }) {
         .from("providers")
         .insert([providerData]);
       if (providerError) {
-        setError("Error al registrar proveedor.");
+        setError("Error al registrar proveedor: " + providerError.message);
         setLoading(false);
         return;
       }
@@ -160,7 +160,7 @@ export default function RegisterScreen({ navigation }) {
       }
 
       const userData = {
-        cedula: form.carnet,
+        cedula: parseInt(form.carnet, 10),
         nombre_completo: (form.nombre_completo + " " + form.apellidos).trim(),
         correo_institucional: correoNormalizado,
         hashed_password: null, // más seguro
