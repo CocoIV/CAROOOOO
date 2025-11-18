@@ -82,7 +82,7 @@ export default function RegisterScreen({ navigation }) {
       return false;
     }
     // Validaciones para proveedor local
-    if (form.rol_id === "4") {
+    if (form.rol_id == 4) {
       if (!form.nombre_emprendimiento || form.nombre_emprendimiento.length > 20) {
         setError("El nombre del proveedor es obligatorio y debe tener máximo 20 caracteres.");
         return false;
@@ -211,7 +211,7 @@ export default function RegisterScreen({ navigation }) {
     }
 
     const userData = {
-      carnet: form.carnet,
+      cedula: parseInt(form.carnet, 10),
       nombre_completo: (form.nombre_completo + " " + form.apellidos).trim(),
       correo_institucional: correoNormalizado,
       hashed_password: null, // más seguro
@@ -322,7 +322,7 @@ export default function RegisterScreen({ navigation }) {
           ))}
         </Picker>
 
-        {form.rol_id === "4" && (
+        {form.rol_id == 4 && (
           <>
             <TextInput
               style={styles.input}
