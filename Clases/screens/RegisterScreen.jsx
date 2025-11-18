@@ -7,7 +7,7 @@ export default function RegisterScreen({ navigation }) {
   const [form, setForm] = useState({
     nombre_completo: '',
     apellidos: '',
-    carnet: '',
+    cedula: '',
     correo_institucional: '',
     correo_personal: '',
     rol_id: '',
@@ -59,7 +59,7 @@ export default function RegisterScreen({ navigation }) {
       setError("Los apellidos son obligatorios y deben tener al menos 2 caracteres.");
       return false;
     }
-    if (!form.carnet) {
+    if (!form.cedula) {
       setError("El número de cédula/carnet es obligatorio.");
       return false;
     }
@@ -124,9 +124,9 @@ export default function RegisterScreen({ navigation }) {
     const now = new Date().toISOString();
 
     if (form.rol_id === "4") {
-      // Registrar proveedor en providers
+      // Registrar proveedor solo en providers
       const providerData = {
-        cedula: form.carnet,
+        cedula: form.cedula,
         nombre: form.nombre_emprendimiento,
         telefono: form.contacto_telefono,
         municipio_permiso: form.permiso_municipal,
@@ -147,53 +147,8 @@ export default function RegisterScreen({ navigation }) {
         setLoading(false);
         return;
       }
-      // Registrar también en users para verificación
-      const { data: existing } = await supabase
-        .from("users")
-        .select("correo_institucional")
-        .eq("correo_institucional", correoNormalizado);
-
-      if (existing && existing.length > 0) {
-        setError("El correo institucional ya está registrado.");
-        setLoading(false);
-        return;
-      }
-
-      const userData = {
-        cedula: form.carnet,
-        nombre_completo: (form.nombre_completo + " " + form.apellidos).trim(),
-        correo_institucional: correoNormalizado,
-        hashed_password: null, // más seguro
-        rol_id: Number(form.rol_id),
-        is_active: true,
-        is_verified: false,
-        created_at: now,
-        updated_at: now,
-      };
-
-      const { data, error: insertError } = await supabase
-        .from("users")
-        .insert([userData])
-        .select();
-
-      if (insertError) {
-        console.log("Insert error:", insertError);
-        setError("Error al registrar usuario.");
-        setLoading(false);
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        setError("Error interno. No se pudo registrar el usuario.");
-        setLoading(false);
-        return;
-      }
-
       setSuccess(true);
-      navigation.navigate("VerificationMethod", {
-        correo_institucional: correoNormalizado,
-        nombre_completo: (form.nombre_completo + " " + form.apellidos).trim(),
-      });
+      navigation.navigate("Success");
       setLoading(false);
       return;
     }
@@ -211,7 +166,7 @@ export default function RegisterScreen({ navigation }) {
     }
 
     const userData = {
-      cedula: parseInt(form.carnet, 10),
+      cedula: form.cedula,
       nombre_completo: (form.nombre_completo + " " + form.apellidos).trim(),
       correo_institucional: correoNormalizado,
       hashed_password: null, // más seguro
@@ -269,8 +224,8 @@ export default function RegisterScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Número de cédula o carnet"
-          value={form.carnet}
-          onChangeText={t => handleChange("carnet", t.replace(/[^0-9]/g, ''))}
+          value={form.cedula}
+          onChangeText={t => handleChange("cedula", t.replace(/[^0-9]/g, ''))}
           keyboardType="numeric"
           maxLength={15}
           placeholderTextColor="#A9A9A9"

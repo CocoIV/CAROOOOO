@@ -1,16 +1,33 @@
 import React, { useState, useEffect } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   View, Text, Image, TouchableOpacity, StyleSheet, 
   TextInput, FlatList 
 } from "react-native";
+import AEModuleButton from '../../AE/AEModuleButton';
 import { Picker } from '@react-native-picker/picker';
 import { supabase } from "../../Supabase/supabaseClient";
 
 export default function ProfileScreen({ navigation }) {
-
   // --------------------------
   // ESTADOS - DAR DE BAJA
   // --------------------------
+
+  // Determinar si el usuario es proveedor (ajusta según tu lógica de autenticación)
+  // Ejemplo: obtener desde props, contexto, o estado global
+  const [isProveedor, setIsProveedor] = useState(false);
+
+  useEffect(() => {
+    const checkRol = async () => {
+      try {
+        const rol = await AsyncStorage.getItem('userRol');
+        setIsProveedor(Number(rol) === 4);
+      } catch (e) {
+        setIsProveedor(false);
+      }
+    };
+    checkRol();
+  }, []);
   const [bajaCedula, setBajaCedula] = useState("");
   const [bajaMotivo, setBajaMotivo] = useState("");
   const [bajaError, setBajaError] = useState("");
@@ -210,6 +227,7 @@ export default function ProfileScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+
       {/* DAR DE BAJA */}
       <View style={styles.editBox}>
         <Text style={styles.editTitle}>Dar de baja proveedor</Text>
@@ -237,6 +255,11 @@ export default function ProfileScreen({ navigation }) {
 
         {bajaError ? <Text style={styles.error}>{bajaError}</Text> : null}
         {bajaSuccess ? <Text style={styles.success}>{bajaSuccess}</Text> : null}
+
+        {/* Módulo AE - solo para proveedores */}
+        {isProveedor && (
+          <AEModuleButton onPress={() => navigation.navigate('AEModule')} />
+        )}
       </View>
 
       {/* EDITAR PROVEEDOR */}

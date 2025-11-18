@@ -38,17 +38,46 @@ export default function LoginScreen({ onLogin }) {
       return;
     }
     try {
-      // Buscar usuario por correo
-      const { data, error: selectError } = await supabase
+      // Buscar usuario por correo en users
+      let { data, error: selectError } = await supabase
         .from('users')
-        .select('hashed_password, is_active, is_verified')
+        .select('hashed_password, is_active, is_verified, rol_id')
         .eq('correo_institucional', correo)
         .single();
+      console.log('Rol obtenido de users:', data?.rol_id);
+      let isProvider = false;
+      // Si no existe en users, buscar en providers
       if (selectError || !data) {
-        setError("Usuario o contraseña incorrectos.");
+        const { data: providerData, error: providerError } = await supabase
+          .from('providers')
+          .select('contacto, telefono, is_active, cedula, rol_id')
+          .or(`contacto.eq.${correo},telefono.eq.${correo}`)
+          .single();
+        if (providerError || !providerData) {
+          setError("Usuario o contraseña incorrectos.");
+          setLoading(false);
+          return;
+        }
+        data = providerData;
+        isProvider = true;
+        console.log('Rol obtenido de providers:', data?.rol_id);
+        // Guardar rol proveedor en AsyncStorage
+        await AsyncStorage.setItem('userRol', String(data.rol_id || 4));
+        // Aquí podrías agregar validación de contraseña para proveedores si la tienes
+        if (!data.is_active) {
+          setError("Tu cuenta de proveedor está desactivada. Contacta soporte.");
+          setLoading(false);
+          return;
+        }
+        // Si tienes contraseña para proveedores, valida aquí
+        // Si no, permite acceso solo por contacto/telefono
+        setError(null);
+        if (onLogin) onLogin();
+        navigation.navigate('Welcome');
         setLoading(false);
         return;
       }
+      // Validación para usuarios normales
       if (!data.is_active) {
         setError("Tu cuenta está desactivada. Contacta soporte.");
         setLoading(false);
@@ -71,9 +100,9 @@ export default function LoginScreen({ onLogin }) {
       }
       // Login exitoso
       setError(null);
-      // Aquí podrías guardar sesión, navegar, etc.
+      // Guardar rol usuario en AsyncStorage
+      await AsyncStorage.setItem('userRol', String(data.rol_id || 1));
       if (onLogin) onLogin();
-      // Navegar a Welcome tras login exitoso
       navigation.navigate('Welcome');
     } catch (e) {
       setError("Error inesperado. Intenta de nuevo.");
