@@ -66,7 +66,7 @@ export default function HomeScreen({ navigation }) {
     fetchNombre();
   }, []);
 
-  // Función para cerrar sesión completamente
+  // Nueva función de logout con botón estilizado
   const handleLogout = async () => {
     await AsyncStorage.clear();
     navigation.reset({
@@ -78,23 +78,16 @@ export default function HomeScreen({ navigation }) {
   return (
     <ScrollView style={styles.container} scrollEnabled={!showFiltros}>
       <View style={styles.headerRow}>
-        {/* Perfil (usuario) */}
-        <TouchableOpacity style={styles.profileIcon} onPress={() => navigation.navigate('ProfileIntro')}>
-          <Image source={require('../../assets/avatar1.png')} style={styles.headerIcon} />
-        </TouchableOpacity>
-        {/* Menú hamburguesa */}
-        <TouchableOpacity style={styles.menuIcon}>
+        {/* Menú hamburguesa (configuraciones) */}
+        <TouchableOpacity style={styles.menuIcon} onPress={() => navigation.navigate('Profile')}>
           <Image source={require('../../assets/login-illustration.png')} style={styles.headerIcon} />
         </TouchableOpacity>
-        {/* Carrito */}
-        <TouchableOpacity style={styles.cartIcon}>
-          <Image source={require('../../assets/favicon.png')} style={styles.headerIcon} />
+        {/* Botón de cerrar sesión */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
         </TouchableOpacity>
       </View>
       <Text style={styles.saludo}>Hola {nombreCompleto || ''}, ¿Qué tal?</Text>
-      <TouchableOpacity style={{alignSelf: 'flex-end', marginBottom: 8}} onPress={handleLogout}>
-        <Text style={{color: '#6C63FF', fontWeight: 'bold'}}>Cerrar sesión</Text>
-      </TouchableOpacity>
       <View style={styles.searchRow}>
         <View style={styles.searchInputWrap}>
           <Image source={require('../../assets/eye.png')} style={styles.searchIconLeft} />
@@ -137,7 +130,18 @@ export default function HomeScreen({ navigation }) {
       <Text style={styles.sectionTitle}>Comidas recomendadas.</Text>
       <View style={styles.cardsRow}>
         {comidasRecomendadas.map((item, idx) => (
-          <View key={idx} style={styles.card}>
+          <TouchableOpacity
+            key={idx}
+            style={styles.card}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('ProductDetailScreen', {
+              nombre: item.nombre,
+              precio: item.precio,
+              imagen: item.imagen,
+              descripcion: 'Descripción del producto.',
+              consideraciones: 'Consideraciones.\nPlantilla de Sabor U.'
+            })}
+          >
             <Image source={item.imagen} style={styles.cardImage} />
             <Text style={styles.cardTitle}>Sabor U</Text>
             <Text style={styles.cardDesc}>{item.nombre}</Text>
@@ -148,7 +152,7 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity style={styles.cardHeart}>
               <Text style={styles.cardHeartText}>♡</Text>
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
       <Text style={styles.sectionTitle}>Saludable.</Text>
@@ -169,7 +173,18 @@ export default function HomeScreen({ navigation }) {
       </ScrollView>
       <View style={[styles.cardsRow, { marginBottom: 48 }]}>
         {saludables.map((item, idx) => (
-          <View key={idx} style={[styles.card, styles.cardSaludable, idx === 1 && styles.cardSaludableAlt]}>
+          <TouchableOpacity
+            key={idx}
+            style={[styles.card, styles.cardSaludable, idx === 1 && styles.cardSaludableAlt]}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('ProductDetailScreen', {
+              nombre: item.nombre,
+              precio: item.precio,
+              imagen: item.imagen,
+              descripcion: 'Descripción del producto.',
+              consideraciones: 'Consideraciones.\nPlantilla de Sabor U.'
+            })}
+          >
             <Image source={item.imagen} style={styles.cardImage} />
             <Text style={styles.cardTitle}>Sabor U</Text>
             <Text style={styles.cardDesc}>{item.nombre}</Text>
@@ -180,7 +195,7 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity style={styles.cardHeart}>
               <Text style={styles.cardHeartText}>♡</Text>
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     </ScrollView>
@@ -188,6 +203,22 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+      profileIcon: {
+        marginRight: 12,
+      },
+    logoutBtn: {
+      backgroundColor: '#ff5252',
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      marginLeft: 10,
+      alignSelf: 'center',
+    },
+    logoutText: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: 14,
+    },
   profileIcon: {
     marginRight: 12,
   },

@@ -1,52 +1,57 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import { Picker } from '@react-native-picker/picker';
+import { Picker } from "@react-native-picker/picker";
 import { supabase } from "../../Supabase/supabaseClient";
 
 export default function RegisterScreen({ navigation }) {
   const [form, setForm] = useState({
-    nombre_completo: '',
-    apellidos: '',
-    carnet: '',
-    correo_institucional: '',
-    correo_personal: '',
-    rol_id: '',
-    nombre_emprendimiento: '',
-    contacto_telefono: '',
-    direccion_habitacion: '',
-    permiso_municipal: '',
-    autorizacion_salud: '',
-    permisos_sanitarios: '',
-    categoria_id: '',
+    nombre_completo: "",
+    apellidos: "",
+    cedula: "",
+    correo_institucional: "",
+    correo_personal: "",
+    rol_id: "",
+    nombre_emprendimiento: "",
+    contacto_telefono: "",
+    direccion_habitacion: "",
+    permiso_municipal: "",
+    autorizacion_salud: "",
+    permisos_sanitarios: "",
+    categoria_id: "",
   });
 
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [categorias, setCategorias] = useState([]);
+
   // Obtener categorías de proveedor desde Supabase
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchCategorias = async () => {
       const { data, error } = await supabase
-        .from('provider_categories')
-        .select('id, name');
+        .from("provider_categories")
+        .select("id, name");
+
       if (!error && data) {
         setCategorias(data);
+      } else {
+        console.log("Error cargando categorías:", error);
       }
     };
+
     fetchCategorias();
   }, []);
 
   const roles = [
-    { id: 1, label: 'Estudiante' },
-    { id: 2, label: 'Docente' },
-    { id: 3, label: 'Administrativo' },
-    { id: 4, label: 'Proveedor local' },
-    { id: 5, label: 'Emprendimiento estudiantil' },
+    { id: 1, label: "Estudiante" },
+    { id: 2, label: "Docente" },
+    { id: 3, label: "Administrativo" },
+    { id: 4, label: "Proveedor local" },
+    { id: 5, label: "Emprendimiento estudiantil" },
   ];
 
   const handleChange = (name, value) => {
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const validateForm = () => {
@@ -59,7 +64,7 @@ export default function RegisterScreen({ navigation }) {
       setError("Los apellidos son obligatorios y deben tener al menos 2 caracteres.");
       return false;
     }
-    if (!form.carnet) {
+    if (!form.cedula) {
       setError("El número de cédula/carnet es obligatorio.");
       return false;
     }
@@ -75,12 +80,14 @@ export default function RegisterScreen({ navigation }) {
       setError("Debes seleccionar un rol.");
       return false;
     }
+
     // Validar formato de correo institucional
     const correo = form.correo_institucional.trim().toLowerCase();
     if (!correo.endsWith("@ucr.ac.cr")) {
       setError("El correo institucional debe terminar en @ucr.ac.cr");
       return false;
     }
+
     // Validaciones para proveedor local
     if (form.rol_id == 4) {
       if (!form.nombre_emprendimiento || form.nombre_emprendimiento.length > 20) {
@@ -108,6 +115,7 @@ export default function RegisterScreen({ navigation }) {
         return false;
       }
     }
+
     setError(null);
     return true;
   };
@@ -123,44 +131,26 @@ export default function RegisterScreen({ navigation }) {
     const correoNormalizado = form.correo_institucional.trim().toLowerCase();
     const now = new Date().toISOString();
 
-    if (form.rol_id == 4) {
-      // Registrar proveedor en providers
-      const providerData = {
-        cedula: parseInt(form.carnet, 10),
-        nombre: form.nombre_emprendimiento,
-        telefono: form.contacto_telefono,
-        municipio_permiso: form.permiso_municipal,
-        permiso_msp: !!form.autorizacion_salud,
-        permisos_sanitarios: form.permisos_sanitarios ? { valor: form.permisos_sanitarios } : null,
-        direccion: form.direccion_habitacion,
-        contacto: form.correo_personal,
-        categoria_id: form.categoria_id,
-        is_active: true,
-        created_at: now,
-        updated_at: now,
-      };
-      const { error: providerError } = await supabase
-        .from("providers")
-        .insert([providerData]);
-      if (providerError) {
-        setError("Error al registrar proveedor: " + providerError.message);
-        setLoading(false);
-        return;
-      }
-      // Registrar también en users para verificación
-      const { data: existing } = await supabase
+    try {
+      // Verificar si ya existe un usuario con ese correo
+      const { data: existing, error: existingError } = await supabase
         .from("users")
         .select("correo_institucional")
         .eq("correo_institucional", correoNormalizado);
 
+      if (existingError) {
+        console.log("Existing user check error:", existingError);
+        setError("Error al verificar el correo institucional.");
+        return;
+      }
+
       if (existing && existing.length > 0) {
         setError("El correo institucional ya está registrado.");
-        setLoading(false);
         return;
       }
 
       const userData = {
-        cedula: parseInt(form.carnet, 10),
+        cedula: parseInt(form.cedula, 10),
         nombre_completo: (form.nombre_completo + " " + form.apellidos).trim(),
         correo_institucional: correoNormalizado,
         hashed_password: null, // más seguro
@@ -179,75 +169,26 @@ export default function RegisterScreen({ navigation }) {
       if (insertError) {
         console.log("Insert error:", insertError);
         setError("Error al registrar usuario.");
-        setLoading(false);
         return;
       }
 
       if (!data || data.length === 0) {
         setError("Error interno. No se pudo registrar el usuario.");
-        setLoading(false);
         return;
       }
 
       setSuccess(true);
+
       navigation.navigate("VerificationMethod", {
         correo_institucional: correoNormalizado,
         nombre_completo: (form.nombre_completo + " " + form.apellidos).trim(),
       });
+    } catch (e) {
+      console.log("Unexpected error:", e);
+      setError("Ha ocurrido un error inesperado. Intenta de nuevo.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Registro de usuario normal (no proveedor local)
-    const { data: existing } = await supabase
-      .from("users")
-      .select("correo_institucional")
-      .eq("correo_institucional", correoNormalizado);
-
-    if (existing && existing.length > 0) {
-      setError("El correo institucional ya está registrado.");
-      setLoading(false);
-      return;
-    }
-
-    const userData = {
-      cedula: parseInt(form.carnet, 10),
-      nombre_completo: (form.nombre_completo + " " + form.apellidos).trim(),
-      correo_institucional: correoNormalizado,
-      hashed_password: null, // más seguro
-      rol_id: Number(form.rol_id),
-      is_active: true,
-      is_verified: false,
-      created_at: now,
-      updated_at: now,
-    };
-
-    const { data, error: insertError } = await supabase
-      .from("users")
-      .insert([userData])
-      .select();
-
-    if (insertError) {
-      console.log("Insert error:", insertError);
-      setError("Error al registrar usuario.");
-      setLoading(false);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      setError("Error interno. No se pudo registrar el usuario.");
-      setLoading(false);
-      return;
-    }
-
-    setSuccess(true);
-
-    navigation.navigate("VerificationMethod", {
-      correo_institucional: correoNormalizado,
-      nombre_completo: (form.nombre_completo + " " + form.apellidos).trim(),
-    });
-
-    setLoading(false);
   };
 
   return (
@@ -263,14 +204,14 @@ export default function RegisterScreen({ navigation }) {
           style={styles.input}
           placeholder="Nombre completo"
           value={form.nombre_completo}
-          onChangeText={t => handleChange("nombre_completo", t)}
+          onChangeText={(t) => handleChange("nombre_completo", t)}
           placeholderTextColor="#A9A9A9"
         />
         <TextInput
           style={styles.input}
           placeholder="Número de cédula o carnet"
-          value={form.carnet}
-          onChangeText={t => handleChange("carnet", t.replace(/[^0-9]/g, ''))}
+          value={form.cedula}
+          onChangeText={(t) => handleChange("cedula", t.replace(/[^0-9]/g, ""))}
           keyboardType="numeric"
           maxLength={15}
           placeholderTextColor="#A9A9A9"
@@ -280,7 +221,7 @@ export default function RegisterScreen({ navigation }) {
           style={styles.input}
           placeholder="Apellidos"
           value={form.apellidos}
-          onChangeText={t => handleChange("apellidos", t)}
+          onChangeText={(t) => handleChange("apellidos", t)}
           placeholderTextColor="#A9A9A9"
         />
 
@@ -289,7 +230,7 @@ export default function RegisterScreen({ navigation }) {
           placeholder="Dirección de correo universitario (@ucr.ac.cr)"
           autoCapitalize="none"
           value={form.correo_institucional}
-          onChangeText={t => handleChange("correo_institucional", t)}
+          onChangeText={(t) => handleChange("correo_institucional", t)}
           placeholderTextColor="#A9A9A9"
         />
 
@@ -298,7 +239,7 @@ export default function RegisterScreen({ navigation }) {
           placeholder="Correo personal (opcional)"
           autoCapitalize="none"
           value={form.correo_personal}
-          onChangeText={t => handleChange("correo_personal", t)}
+          onChangeText={(t) => handleChange("correo_personal", t)}
           placeholderTextColor="#A9A9A9"
         />
 
@@ -306,7 +247,7 @@ export default function RegisterScreen({ navigation }) {
           style={[styles.input, styles.inputSmall]}
           placeholder="Dirección de habitación"
           value={form.direccion_habitacion}
-          onChangeText={t => handleChange("direccion_habitacion", t)}
+          onChangeText={(t) => handleChange("direccion_habitacion", t)}
           placeholderTextColor="#A9A9A9"
         />
 
@@ -314,10 +255,10 @@ export default function RegisterScreen({ navigation }) {
         <Picker
           selectedValue={form.rol_id}
           style={styles.input}
-          onValueChange={v => handleChange("rol_id", v)}
+          onValueChange={(v) => handleChange("rol_id", v)}
         >
           <Picker.Item label="Selecciona un rol" value="" />
-          {roles.map(r => (
+          {roles.map((r) => (
             <Picker.Item key={r.id} label={r.label} value={r.id} />
           ))}
         </Picker>
@@ -328,7 +269,7 @@ export default function RegisterScreen({ navigation }) {
               style={styles.input}
               placeholder="Nombre del emprendimiento (máx. 20 caracteres)"
               value={form.nombre_emprendimiento}
-              onChangeText={t => handleChange("nombre_emprendimiento", t)}
+              onChangeText={(t) => handleChange("nombre_emprendimiento", t)}
               maxLength={20}
               placeholderTextColor="#A9A9A9"
             />
@@ -336,7 +277,9 @@ export default function RegisterScreen({ navigation }) {
               style={styles.input}
               placeholder="Número de contacto (8 dígitos)"
               value={form.contacto_telefono}
-              onChangeText={t => handleChange("contacto_telefono", t.replace(/[^0-9]/g, ''))}
+              onChangeText={(t) =>
+                handleChange("contacto_telefono", t.replace(/[^0-9]/g, ""))
+              }
               keyboardType="numeric"
               maxLength={8}
               placeholderTextColor="#A9A9A9"
@@ -345,31 +288,31 @@ export default function RegisterScreen({ navigation }) {
               style={styles.input}
               placeholder="Número de permiso municipal"
               value={form.permiso_municipal}
-              onChangeText={t => handleChange("permiso_municipal", t)}
+              onChangeText={(t) => handleChange("permiso_municipal", t)}
               placeholderTextColor="#A9A9A9"
             />
             <TextInput
               style={styles.input}
               placeholder="Autorización del Ministerio de Salud"
               value={form.autorizacion_salud}
-              onChangeText={t => handleChange("autorizacion_salud", t)}
+              onChangeText={(t) => handleChange("autorizacion_salud", t)}
               placeholderTextColor="#A9A9A9"
             />
             <TextInput
               style={styles.input}
               placeholder="Permisos sanitarios"
               value={form.permisos_sanitarios}
-              onChangeText={t => handleChange("permisos_sanitarios", t)}
+              onChangeText={(t) => handleChange("permisos_sanitarios", t)}
               placeholderTextColor="#A9A9A9"
             />
             <Text style={styles.label}>Categoría de proveedor</Text>
             <Picker
               selectedValue={form.categoria_id}
               style={styles.input}
-              onValueChange={v => handleChange("categoria_id", v)}
+              onValueChange={(v) => handleChange("categoria_id", v)}
             >
               <Picker.Item label="Selecciona una categoría" value="" />
-              {categorias.map(cat => (
+              {categorias.map((cat) => (
                 <Picker.Item key={cat.id} label={cat.name} value={cat.id} />
               ))}
             </Picker>
@@ -410,14 +353,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
   },
-
   backButton: { alignSelf: "flex-start", marginBottom: 10 },
   backArrow: { fontSize: 28, color: "#888", fontWeight: "bold" },
-
   title: { fontSize: 28, fontWeight: "bold", marginBottom: 24, color: "#222" },
-
   formContainer: { width: "100%", maxWidth: 420, marginBottom: 24 },
-
   input: {
     width: "100%",
     backgroundColor: "#F2F2F2",
@@ -428,11 +367,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     color: "#222",
   },
-
   inputSmall: { fontSize: 13 },
-
   label: { marginBottom: 4, fontSize: 14, color: "#222" },
-
   button: {
     backgroundColor: "#5C5CFF",
     borderRadius: 28,
@@ -442,30 +378,22 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     marginBottom: 18,
   },
-
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-
   error: { color: "red", marginBottom: 10 },
   success: { color: "green", marginBottom: 10 },
-
   infoContainer: {
     width: "100%",
     maxWidth: 420,
     marginTop: 8,
     marginBottom: 8,
   },
-
   rowTextLink: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
   },
-
   infoText: { fontSize: 13, color: "#222" },
-
   linkText: { color: "#276EF1", fontWeight: "bold", textDecorationLine: "underline" },
-
   infoTitle: { fontSize: 15, fontWeight: "bold", color: "#222", marginBottom: 6 },
-
   infoDescription: { fontSize: 13, color: "#444", marginBottom: 4, lineHeight: 18 },
 });

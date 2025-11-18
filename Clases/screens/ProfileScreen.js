@@ -1,21 +1,132 @@
 import React, { useState, useEffect } from "react";
-import { 
-  View, Text, Image, TouchableOpacity, StyleSheet, 
-  TextInput, FlatList 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  FlatList,
+  ScrollView,
 } from "react-native";
-import { Picker } from '@react-native-picker/picker';
+import { Picker } from "@react-native-picker/picker";
 import { supabase } from "../../Supabase/supabaseClient";
+import AEModuleButton from "../../AE/AEModuleButton";
 
 export default function ProfileScreen({ navigation }) {
+  // -----------------------------
+  // ESTADO PERFIL BÁSICO
+  // -----------------------------
+  const [nombreUsuario, setNombreUsuario] = useState("");
+  const [isProveedor, setIsProveedor] = useState(false);
 
-  // --------------------------
-  // ESTADOS - DAR DE BAJA
-  // --------------------------
+  // -----------------------------
+  // ESTADO PREFERENCIAS ALIMENTICIAS
+  // -----------------------------
+  const [editPreferenciasVisible, setEditPreferenciasVisible] = useState(false);
+  const [preferencias, setPreferencias] = useState("");
+  const [filtrosDieta, setFiltrosDieta] = useState("");
+  const [notificaciones, setNotificaciones] = useState("");
+  const [saveMsg, setSaveMsg] = useState("");
+
+  // -----------------------------
+  // ESTADO DAR DE BAJA PROVEEDOR
+  // -----------------------------
   const [bajaCedula, setBajaCedula] = useState("");
   const [bajaMotivo, setBajaMotivo] = useState("");
   const [bajaError, setBajaError] = useState("");
   const [bajaSuccess, setBajaSuccess] = useState("");
 
+  // -----------------------------
+  // ESTADO EDITAR PROVEEDOR
+  // -----------------------------
+  const [editCedula, setEditCedula] = useState("");
+  const [editNombre, setEditNombre] = useState("");
+  const [editCategoriaId, setEditCategoriaId] = useState("");
+  const [editEstado, setEditEstado] = useState(true);
+  const [editFechaRenovacion, setEditFechaRenovacion] = useState("");
+  const [editVisible, setEditVisible] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [editSuccess, setEditSuccess] = useState("");
+
+  // -----------------------------
+  // ESTADO BUSCADOR
+  // -----------------------------
+  const [nombre, setNombre] = useState("");
+  const [cedula, setCedula] = useState("");
+  const [categoriaId, setCategoriaId] = useState("");
+  const [categorias, setCategorias] = useState([]);
+  const [resultados, setResultados] = useState([]);
+  const [error, setError] = useState("");
+
+  // -------------------------------------------------
+  // CARGAR INFO BÁSICA DEL PERFIL + PREFERENCIAS
+  // -------------------------------------------------
+  useEffect(() => {
+    const cargarPerfil = async () => {
+      try {
+        const storedNombre = await AsyncStorage.getItem("nombre_usuario");
+        const storedRolId = await AsyncStorage.getItem("rol_id");
+
+        if (storedNombre) setNombreUsuario(storedNombre);
+        if (storedRolId && (storedRolId === "4" || storedRolId === "5")) {
+          setIsProveedor(true);
+        }
+
+        const storedPref = await AsyncStorage.getItem("preferencias_dieta");
+        const storedFiltros = await AsyncStorage.getItem("filtros_dieta");
+        const storedNotifs = await AsyncStorage.getItem("notificaciones_alimenticias");
+
+        if (storedPref) setPreferencias(storedPref);
+        if (storedFiltros) setFiltrosDieta(storedFiltros);
+        if (storedNotifs) setNotificaciones(storedNotifs);
+      } catch (e) {
+        console.log("Error cargando perfil:", e);
+      }
+    };
+
+    cargarPerfil();
+  }, []);
+
+  // -------------------------------------------------
+  // CARGAR CATEGORÍAS DE PROVEEDOR DESDE SUPABASE
+  // -------------------------------------------------
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      const { data, error } = await supabase
+        .from("provider_categories")
+        .select("id, name");
+
+      if (!error && data) {
+        setCategorias(data);
+      } else {
+        console.log("Error cargando categorías:", error);
+      }
+    };
+
+    fetchCategorias();
+  }, []);
+
+  // -------------------------------------------------
+  // GUARDAR PREFERENCIAS ALIMENTICIAS
+  // -------------------------------------------------
+  const guardarPreferencias = async () => {
+    try {
+      await AsyncStorage.setItem("preferencias_dieta", preferencias || "");
+      await AsyncStorage.setItem("filtros_dieta", filtrosDieta || "");
+      await AsyncStorage.setItem("notificaciones_alimenticias", notificaciones || "");
+      setSaveMsg("Preferencias guardadas correctamente.");
+      setTimeout(() => setSaveMsg(""), 3000);
+    } catch (e) {
+      console.log("Error guardando preferencias:", e);
+      setSaveMsg("Error al guardar preferencias.");
+    }
+  };
+
+  // -------------------------------------------------
+  // DAR DE BAJA PROVEEDOR
+  // -------------------------------------------------
   const darDeBajaProveedor = async () => {
     setBajaError("");
     setBajaSuccess("");
@@ -25,17 +136,10 @@ export default function ProfileScreen({ navigation }) {
       return;
     }
 
-    // Convertir cedula a número para la consulta
-    const cedulaInt = parseInt(bajaCedula, 10);
-    if (isNaN(cedulaInt)) {
-      setBajaError("La cédula debe ser un número válido.");
-      return;
-    }
-
     const { data, error } = await supabase
       .from("providers")
       .select("cedula, is_active")
-      .eq("cedula", cedulaInt)
+      .eq("cedula", bajaCedula)
       .single();
 
     if (error || !data) {
@@ -45,28 +149,23 @@ export default function ProfileScreen({ navigation }) {
 
     const { error: updateError } = await supabase
       .from("providers")
-      .update({ is_active: false, motivo_baja: bajaMotivo || null })
-      .eq("cedula", cedulaInt);
+      .update({
+        is_active: false,
+        motivo_baja: bajaMotivo || null, // si no existe esta columna, quítala
+      })
+      .eq("cedula", bajaCedula);
 
     if (updateError) {
+      console.log("Error baja proveedor:", updateError);
       setBajaError("Error al dar de baja al proveedor.");
     } else {
       setBajaSuccess("Proveedor dado de baja correctamente.");
     }
   };
 
-  // --------------------------
-  // ESTADOS - EDICIÓN
-  // --------------------------
-  const [editVisible, setEditVisible] = useState(false);
-  const [editCedula, setEditCedula] = useState("");
-  const [editNombre, setEditNombre] = useState("");
-  const [editCategoriaId, setEditCategoriaId] = useState("");
-  const [editEstado, setEditEstado] = useState(true);
-  const [editFechaRenovacion, setEditFechaRenovacion] = useState("");
-  const [editError, setEditError] = useState("");
-  const [editSuccess, setEditSuccess] = useState("");
-
+  // -------------------------------------------------
+  // CARGAR PROVEEDOR PARA EDICIÓN
+  // -------------------------------------------------
   const cargarProveedor = async () => {
     setEditError("");
     setEditSuccess("");
@@ -95,6 +194,9 @@ export default function ProfileScreen({ navigation }) {
     );
   };
 
+  // -------------------------------------------------
+  // ACTUALIZAR PROVEEDOR
+  // -------------------------------------------------
   const actualizarProveedor = async () => {
     setEditError("");
     setEditSuccess("");
@@ -108,7 +210,7 @@ export default function ProfileScreen({ navigation }) {
       return;
     }
     if (!editCategoriaId) {
-      setEditError("La categoría seleccionada no existe.");
+      setEditError("Debes seleccionar una categoría válida.");
       return;
     }
 
@@ -116,39 +218,23 @@ export default function ProfileScreen({ navigation }) {
       .from("providers")
       .update({
         nombre: editNombre,
-        categoria_id: editCategoriaId,
+        categoria_id: Number(editCategoriaId),
         is_active: editEstado,
         fecha_renovacion: editFechaRenovacion || null,
       })
       .eq("cedula", editCedula);
 
     if (error) {
+      console.log("Error al actualizar proveedor:", error);
       setEditError("Error al actualizar proveedor.");
     } else {
       setEditSuccess("Proveedor actualizado correctamente.");
     }
   };
 
-  // --------------------------
-  // ESTADOS - BUSCADOR
-  // --------------------------
-  const [nombre, setNombre] = useState("");
-  const [cedula, setCedula] = useState("");
-  const [categoriaId, setCategoriaId] = useState("");
-  const [categorias, setCategorias] = useState([]);
-  const [resultados, setResultados] = useState([]);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchCategorias = async () => {
-      const { data, error } = await supabase
-        .from("provider_categories")
-        .select("id, name");
-      if (!error && data) setCategorias(data);
-    };
-    fetchCategorias();
-  }, []);
-
+  // -------------------------------------------------
+  // VALIDAR CAMPOS BUSCADOR
+  // -------------------------------------------------
   const validarCampos = () => {
     if (nombre && nombre.length > 20) {
       setError("El nombre debe tener máximo 20 caracteres.");
@@ -166,6 +252,9 @@ export default function ProfileScreen({ navigation }) {
     return true;
   };
 
+  // -------------------------------------------------
+  // BUSCAR PROVEEDORES
+  // -------------------------------------------------
   const buscarProveedores = async () => {
     if (!validarCampos()) return;
 
@@ -178,6 +267,7 @@ export default function ProfileScreen({ navigation }) {
     const { data, error } = await query;
 
     if (error) {
+      console.log("Error al buscar proveedores:", error);
       setError("Error al buscar proveedores.");
       setResultados([]);
     } else {
@@ -185,32 +275,73 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  // -----------------------------------------------------
-  //                    RENDER / UI
-  // -----------------------------------------------------
-
+  // -------------------------------------------------
+  // RENDER
+  // -------------------------------------------------
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
         <Text style={styles.backText}>{"< Volver."}</Text>
       </TouchableOpacity>
 
-      <Image
-        source={require("../../assets/avatar1.png")}
-        style={styles.logo}
-      />
+      <Image source={require("../../assets/avatar1.png")} style={styles.logo} />
 
+      {/* PERFIL */}
       <View style={styles.profileBox}>
-        <Text style={styles.name}>Carlos Barroso.</Text>
+        <Text style={styles.name}>{nombreUsuario || "Perfil"}</Text>
         <Text style={styles.email}>Correo universitario.</Text>
         <Text style={styles.desc}>Descripción.</Text>
-
-        <TouchableOpacity style={styles.editBtn}>
-          <Text style={styles.editText}>Edit</Text>
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={() => setEditPreferenciasVisible((v) => !v)}
+        >
+          <Text style={styles.editText}>
+            {editPreferenciasVisible ? "Cerrar" : "Edit"}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* DAR DE BAJA */}
+      {/* PREFERENCIAS ALIMENTICIAS */}
+      {editPreferenciasVisible && (
+        <View style={styles.prefCard}>
+          <Text style={styles.prefTitle}>🍽️ Preferencias alimenticias</Text>
+          <Text style={styles.prefSubtitle}>
+            Personaliza tu experiencia y recomendaciones
+          </Text>
+
+          <TextInput
+            style={styles.prefInput}
+            placeholder="🥗 Preferencias de dieta (ej: vegetariano, vegano)"
+            value={preferencias}
+            onChangeText={setPreferencias}
+            placeholderTextColor="#A9A9A9"
+          />
+
+          <TextInput
+            style={styles.prefInput}
+            placeholder="🚫 Filtros de dieta (ej: sin gluten, sin lactosa)"
+            value={filtrosDieta}
+            onChangeText={setFiltrosDieta}
+            placeholderTextColor="#A9A9A9"
+          />
+
+          <TextInput
+            style={styles.prefInput}
+            placeholder="⚠️ Alergias y notificaciones"
+            value={notificaciones}
+            onChangeText={setNotificaciones}
+            placeholderTextColor="#A9A9A9"
+          />
+
+          <TouchableOpacity style={styles.prefBtn} onPress={guardarPreferencias}>
+            <Text style={styles.prefBtnText}>Guardar preferencias</Text>
+          </TouchableOpacity>
+
+          {saveMsg ? <Text style={styles.success}>{saveMsg}</Text> : null}
+        </View>
+      )}
+
+      {/* DAR DE BAJA PROVEEDOR */}
       <View style={styles.editBox}>
         <Text style={styles.editTitle}>Dar de baja proveedor</Text>
 
@@ -237,6 +368,11 @@ export default function ProfileScreen({ navigation }) {
 
         {bajaError ? <Text style={styles.error}>{bajaError}</Text> : null}
         {bajaSuccess ? <Text style={styles.success}>{bajaSuccess}</Text> : null}
+
+        {/* Módulo AE - solo para proveedores */}
+        {isProveedor && (
+          <AEModuleButton onPress={() => navigation.navigate("AEModule")} />
+        )}
       </View>
 
       {/* EDITAR PROVEEDOR */}
@@ -282,11 +418,7 @@ export default function ProfileScreen({ navigation }) {
             >
               <Picker.Item label="Selecciona una categoría" value="" />
               {categorias.map((cat) => (
-                <Picker.Item 
-                  key={cat.id} 
-                  label={cat.name} 
-                  value={String(cat.id)} 
-                />
+                <Picker.Item key={cat.id} label={cat.name} value={String(cat.id)} />
               ))}
             </Picker>
 
@@ -314,12 +446,17 @@ export default function ProfileScreen({ navigation }) {
               maxLength={10}
             />
 
-            <TouchableOpacity style={styles.searchBtn} onPress={actualizarProveedor}>
+            <TouchableOpacity
+              style={styles.searchBtn}
+              onPress={actualizarProveedor}
+            >
               <Text style={styles.searchBtnText}>Actualizar proveedor</Text>
             </TouchableOpacity>
 
             {editError ? <Text style={styles.error}>{editError}</Text> : null}
-            {editSuccess ? <Text style={styles.success}>{editSuccess}</Text> : null}
+            {editSuccess ? (
+              <Text style={styles.success}>{editSuccess}</Text>
+            ) : null}
           </View>
         )}
       </View>
@@ -351,11 +488,7 @@ export default function ProfileScreen({ navigation }) {
         >
           <Picker.Item label="Selecciona categoría" value="" />
           {categorias.map((cat) => (
-            <Picker.Item 
-              key={cat.id} 
-              label={cat.name} 
-              value={cat.id} 
-            />
+            <Picker.Item key={cat.id} label={cat.name} value={cat.id} />
           ))}
         </Picker>
 
@@ -373,10 +506,9 @@ export default function ProfileScreen({ navigation }) {
               <Text style={styles.resultText}>Nombre: {item.nombre}</Text>
               <Text style={styles.resultText}>Cédula: {item.cedula}</Text>
               <Text style={styles.resultText}>
-                Categoría: {
-                  categorias.find((c) => c.id == item.categoria_id)?.name 
-                  || item.categoria_id
-                }
+                Categoría:{" "}
+                {categorias.find((c) => c.id == item.categoria_id)?.name ||
+                  item.categoria_id}
               </Text>
             </View>
           )}
@@ -408,20 +540,21 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.menuText}>Calendario.</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 // --------------------------------------
-//          ESTILOS (IGUAL QUE LOS TUYOS)
+//                ESTILOS
 // --------------------------------------
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: "#fafafa",
     alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 24,
+    paddingBottom: 32,
   },
   backBtn: { alignSelf: "flex-start", marginBottom: 8 },
   backText: { fontSize: 16, color: "#222", fontWeight: "bold" },
@@ -474,8 +607,8 @@ const styles = StyleSheet.create({
 
   searchBtnText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 
-  error: { color: "red", textAlign: "center" },
-  success: { color: "green", textAlign: "center" },
+  error: { color: "red", textAlign: "center", marginBottom: 4 },
+  success: { color: "green", textAlign: "center", marginBottom: 4 },
 
   resultItem: {
     backgroundColor: "#f5f5f5",
@@ -522,7 +655,7 @@ const styles = StyleSheet.create({
   estadoActivo: { backgroundColor: "#4CAF50" },
   estadoInactivo: { backgroundColor: "#F44336" },
 
-  menuBox: { width: "100%", marginTop: 10 },
+  menuBox: { width: "100%", marginTop: 10, marginBottom: 20 },
   menuItem: {
     backgroundColor: "#f5f5f5",
     borderRadius: 12,
@@ -531,4 +664,63 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   menuText: { fontSize: 16, color: "#222", fontWeight: "500" },
+
+  // --- Modernos para preferencias alimenticias ---
+  prefCard: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 22,
+    marginBottom: 18,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    alignItems: "center",
+  },
+  prefTitle: {
+    fontWeight: "bold",
+    fontSize: 20,
+    color: "#276EF1",
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  prefSubtitle: {
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  prefInput: {
+    width: "100%",
+    backgroundColor: "#F2F2F2",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    marginBottom: 14,
+    color: "#222",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  prefBtn: {
+    backgroundColor: "#276EF1",
+    borderRadius: 24,
+    paddingVertical: 14,
+    alignItems: "center",
+    width: "100%",
+    marginTop: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  prefBtnText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 17,
+    letterSpacing: 0.5,
+  },
 });
