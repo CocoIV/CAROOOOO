@@ -1,16 +1,13 @@
-# 📚 Foro-Universitario-app
+# 🍽️ Sabor U — Donde la comida y el corazón se encuentran
 
-> Una aplicación de foro académico moderna para estudiantes y docentes, diseñada para fomentar la colaboración, el intercambio de conocimiento y la construcción de comunidad universitaria.
-
-![GitHub repo size](https://img.shields.io/github/repo-size/LEGCIUS/Foro-Universitario-app?color=blue)
-![GitHub last commit](https://img.shields.io/github/last-commit/LEGCIUS/Foro-Universitario-app?color=green)
-![GitHub issues](https://img.shields.io/github/issues/LEGCIUS/Foro-Universitario-app)
-![GitHub license](https://img.shields.io/github/license/LEGCIUS/Foro-Universitario-app)
-![GitHub stars](https://img.shields.io/github/stars/LEGCIUS/Foro-Universitario-app?style=social)
+> *Dicen que en la universidad se aprende de todo: teoría, resistencia al sueño… y amor silencioso.*  
+> Dos programadores construyen esta aplicación con una certeza imposible de compilar:  
+> **El amor a dos estudiantes de la Universidad Nacional (UNA), uno soñando en Coto y el otro en Heredia**,  
+> y este proyecto es la forma más honesta que encontraron de decirlo sin decirlo.
 
 ---
 
-## 📖 Tabla de Contenidos
+## 📖 Tabla de contenidos
 
 - [Descripción](#descripción)
 - [Características](#características)
@@ -27,106 +24,104 @@
 
 ## 🧩 Descripción
 
-**Foro-Universitario-app** es una aplicación web enfocada en la comunicación académica. Permite crear hilos de discusión, compartir recursos y conectar a estudiantes con profesores dentro de una misma plataforma.
+En los campus, entre edificios que guardan secretos y amores no correspondidos, nace **Sabor U**:  
+una plataforma donde la comida universitaria se convierte en puente, refugio y encuentro.
 
-Esta herramienta busca fomentar comunidades académicas digitales dentro de universidades, facultades y grupos de estudio.
+Una herramienta para pedir platos preparados con manos emprendedoras,  
+pero también un pequeño altar digital donde viven dos nombres que no se pronuncian,  
+dos miradas que inspiran funciones y pantallas,  
+dos historias reales que respiran dentro de este código.
+
+> ✨ *Cada plato tiene un sabor… y cada commit tiene un corazón.*  
+> Aquí, la comida alimenta el cuerpo,  
+> pero Sabor U alimenta algo más.
 
 ---
 
 ## 🚀 Características
 
-- 🧑‍🎓 Registro y autenticación de usuarios (estudiantes y docentes)  
-- 💬 Creación y gestión de publicaciones e hilos de discusión  
-- 📎 Soporte para adjuntar recursos y materiales académicos  
-- 🧭 Clasificación por categorías o asignaturas  
-- ⚡️ Integración con **Supabase** (autenticación, base de datos y almacenamiento)  
-- 📱 Interfaz modular y adaptable  
-- 🔒 Configuración segura mediante variables de entorno (.env)
+- 🧑‍🍳 Gestión de proveedores, menús y platillos que perfuman los pasillos universitarios  
+- 📦 Creación y seguimiento de pedidos (como seguir una conversación que no queremos terminar)  
+- 💳 Pagos seguros con **Stripe** (porque el amor será incierto, pero el pago no)  
+- 🍽️ Opciones por dieta, sabores e historias  
+- 🔔 Notificaciones que ojalá fueran mensajes de la persona que piensas  
+- 📊 Panel para administración  
+- 📱 Interfaz pensada para estudiantes, emprendedores, y corazones que laten fuerte
 
 ---
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **TypeScript / JavaScript**
-- **Node.js** + **npm**
-- **Supabase** (BaaS)
-- **HTML5 / CSS3 / Tailwind / frameworks frontend**
-- **Git** y **GitHub** para control de versiones
-- **tsconfig.json** para tipado y compilación
+- **React Native / Expo**
+- **JavaScript / TypeScript**
+- **Supabase** (autenticación, base de datos y almacenamiento)
+- **Stripe** (pagos)
+- **Node.js / npm**
+- **Git & GitHub**
 
 ---
 
 ## 🧰 Instalación
 
-Sigue estos pasos para ejecutar el proyecto localmente:
-
 ```bash
-# 1. Clona el repositorio
-git clone https://github.com/LEGCIUS/Foro-Universitario-app.git
-cd Foro-Universitario-app
+# 1. Clona este repositorio que nació en un suspiro
+git clone https://github.com/CruzAndr/Clover.git
+cd Clover
 
-# 2. Instala las dependencias
+# 2. Instala dependencias, como quien ordena su vida
 npm install
 
-# 3. Configura las variables de entorno
-# Crea un archivo .env y define tus claves de Supabase:
+# 3. Configura tu .env, porque hay claves que no se cuentan a cualquiera
 # SUPABASE_URL=
 # SUPABASE_ANON_KEY=
 
-# 4. Ejecuta la app en modo desarrollo
-npm run dev
+# 4. Inicia la aplicación
+npx expo start
+💻 Uso
+Regístrate o inicia sesión (nadie debería comer solo).
 
-💡 Nota: Asegúrate de tener Node.js y npm instalados antes de comenzar.
+Explora el menú y descubre sabores como quien descubre una sonrisa.
 
-💻 Uso:
-1. Inicia la aplicación localmente con npm run dev.
-2. Crea una cuenta de usuario o inicia sesión.
-3. Accede al listado de clases o categorías.
-4. Crea un nuevo hilo o responde a otros usuarios.
-5. Adjunta archivos o recursos académicos.
-6. Explora y filtra por categorías, temas o autores.
+Haz tu pedido, paga y espera…
+lo bueno siempre se hace esperar.
 
-🗂️ Estructura del Proyecto:
-Foro-Universitario-app/
+Disfruta. Porque la vida universitaria también se saborea.
+
+🗂️ Estructura del Proyecto
+bash
+Copiar código
+SaborU/
 │
-├── Clases/          # Módulos y componentes relacionados con las clases/categorías
-├── Supabase/        # Configuración e integración con Supabase (BaaS)
-├── assets/          # Recursos estáticos: imágenes, íconos, estilos
-├── app.json         # Configuración de la aplicación
-├── package.json     # Dependencias y scripts npm
-├── tsconfig.json    # Configuración de TypeScript
-└── .gitignore       # Archivos ignorados por Git
-
-
+├── app/               # Pantallas, caminos y decisiones
+├── Supabase/          # Donde viven los datos y algunas verdades
+├── components/        # Piezas que se unen como las historias
+├── assets/            # Imágenes, memorias y trocitos del alma
+├── App.js
+└── .env.example
 🤝 Contribuciones
+Si este proyecto toca algo dentro de ti,
+si tú también amas en silencio a alguien del campus,
+si quieres mejorar Sabor U, eres bienvenido.
 
-¡Las contribuciones son bienvenidas y muy apreciadas! 🙌
-Si deseas colaborar:
-  1. Haz un fork del proyecto.
-  2. Crea una rama con tu mejora:
-      git checkout -b feature/nueva-funcionalidad
-
-  3. Realiza los cambios y haz commit:
-      git commit -m "Agrega nueva funcionalidad"
-
-  4. Envía tus cambios:
-      git push origin feature/nueva-funcionalidad
-
-  5. Abre un Pull Request detallando los cambios realizados.
-  🧠 Consejo: Usa commits claros y concisos.
------------------------------------------------------------------------
+bash
+Copiar código
+git checkout -b feature/nueva-historia
+git commit -m "Agrega un verso más al código"
+git push origin feature/nueva-historia
 📜 Licencia
-Distribuido bajo la licencia MIT.
-Desarrollado en la Universidad de Costa Rica, Sede del Sur.
-Por el equipo Tempora.
+Distribuido bajo MIT License
+Pero si lo usas para conquistar a alguien,
+no olvides dar los créditos correspondientes. 🌹
 
------------------------------------------------------------------------
-🌟 Reconocimientos:
-🧱 Inspirado por proyectos de colaboración universitaria open-source
-💾 Supabase por su facilidad de uso y potencia
-🙏 Gracias a todos los colaboradores y futuros contribuidores
------------------------------------------------------------------------
+🌟 Reconocimientos
+A ellas, dos estudiantes de la UNA,
+que nunca pidieron ser inspiración
+y aun así lo son.
 
-**✨ “El conocimiento crece cuando se comparte.”
-— Foro-U.
-**
+A las cafeterías que nos vieron programar con ojeras.
+
+A los pasillos que escucharon conversaciones que no supimos continuar.
+
+A la comida universitaria, que sostiene cuerpos… y a veces corazones.
+
+✨ "Hay sabores que se olvidan... pero hay miradas que no." — Sabor U
